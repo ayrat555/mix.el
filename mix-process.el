@@ -16,6 +16,12 @@
   :type 'file
   :group 'mix)
 
+(defcustom mix--start-in-umbrella
+  t
+  "Start mix command in the umbrella app root or use a subproject."
+  :type 'boolean
+  :group 'mix)
+
 (defcustom mix--command-compile "compile"
   "Subcommand used by `mix-compile'."
   :type 'string)
@@ -28,7 +34,17 @@
 
 (defun mix--project-root ()
   "Find the root of the current mix project."
-  (let ((root (locate-dominating-file (or buffer-file-name default-directory) "mix.exs")))
+  (let ((closest-path (or buffer-file-name default-directory)))
+    (if (and mix--start-in-umbrella (string-match-p (regexp-quote "apps") closest-path))
+        (let* ((potential-umbrella-root-parts (butlast (split-string closest-path "/apps/")))
+               (potential-umbrella-root (string-join potential-umbrella-root-parts ""))
+               (umbrella-app-root (mix--find-closest-mix-file-dir potential-umbrella-root)))
+          (or umbrella-app-root (mix--find-closest-mix-file-dir closest-path)))
+      (mix--find-closest-mix-file-dir closest-path))))
+
+(defun mix--find-closest-mix-file-dir (path)
+  "Find the closest mix file to the current buffer PATH."
+    (let ((root (locate-dominating-file path "mix.exs")))
     (when root
       (file-truename root))))
 
