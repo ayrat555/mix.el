@@ -16,6 +16,16 @@
   :type 'file
   :group 'mix)
 
+(defcustom mix--command-compile "compile"
+  "Subcommand used by `mix-compile'."
+  :type 'string)
+
+(define-derived-mode mix-mode compilation-mode "Mix Mode."
+  "Major mode for the Mix buffer."
+  (setq major-mode 'mix-mode)
+  (setq mode-name "Mix")
+  (setq-local truncate-lines t))
+
 (defun mix--project-root ()
   "Find the root of the current mix project."
   (let ((root (locate-dominating-file (or buffer-file-name default-directory) "mix.exs")))
@@ -41,5 +51,11 @@ Returns the created process."
     (let ((process (get-buffer-process buffer)))
       process)))
 
-(provide 'mix-process)
+;;;###autoload
+(defun mix-compile ()
+  "Run the mix compile command."
+  (interactive)
+  (mix--start "compile" mix--command-compile))
+
+(provide 'mix)
 ;;; mix-process.el ends here
