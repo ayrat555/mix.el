@@ -26,11 +26,17 @@
   "Subcommand used by `mix-compile'."
   :type 'string)
 
+(defcustom mix--command-test "test"
+  "Subcommand used by `mix-test'."
+  :type 'string)
+
 (define-derived-mode mix-mode compilation-mode "Mix Mode."
   "Major mode for the Mix buffer."
   (setq major-mode 'mix-mode)
   (setq mode-name "Mix")
-  (setq-local truncate-lines t))
+  (setq buffer-read-only t)
+  (setq-local truncate-lines t)
+  (add-hook 'compilation-filter-hook 'mix--output-filter))
 
 (defun mix--project-root ()
   "Find the root of the current mix project."
@@ -47,6 +53,11 @@
     (let ((root (locate-dominating-file path "mix.exs")))
     (when root
       (file-truename root))))
+
+(defun mix--output-filter ()
+  "Remove control characters from output."
+  (let ((buffer-read-only nil))
+    (ansi-color-apply-on-region (point-min) (point-max))))
 
 (defun mix--start (name command)
   "Start the mix process NAME with the mix command COMMAND.
@@ -72,6 +83,12 @@ Returns the created process."
   "Run the mix compile command."
   (interactive)
   (mix--start "compile" mix--command-compile))
+
+;;;###autoload
+(defun mix-test ()
+  "Run the mix test command."
+  (interactive)
+  (mix--start "test" mix--command-test))
 
 (provide 'mix)
 ;;; mix-process.el ends here
