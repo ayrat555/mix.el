@@ -64,10 +64,7 @@
 Returns the created process."
   (let* ((buffer (concat "*mix " name "*"))
          (project-root (mix--project-root))
-         (cmd
-          (mapconcat #'identity (list (shell-quote-argument mix--path-to-bin)
-                                      command)
-                     " "))
+         (cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
          (default-directory (or project-root default-directory)))
     (save-some-buffers (not compilation-ask-about-save)
                        (lambda ()
@@ -89,6 +86,38 @@ Returns the created process."
   "Run the mix test command."
   (interactive)
   (mix--start "test" mix--command-test))
+
+;;;###autoload
+(defun mix-test-current-buffer ()
+  "Run the mix test for the current buffer."
+  (interactive)
+  (let* ((current-file-path (expand-file-name buffer-file-name))
+         (test-command (concat mix--command-test " " current-file-path)))
+    (mix--start "test" test-command)))
+
+;;;###autoload
+(defun mix-test-current-test ()
+  "Run the mix test for the curret test."
+  (interactive)
+  (let* ((current-buffer-line-number (number-to-string (line-number-at-pos)))
+         (current-file-path (expand-file-name buffer-file-name))
+         (test-command (concat mix--command-test " " current-file-path ":" current-buffer-line-number)))
+    (mix--start "test" test-command)))
+
+
+(defvar mix-minor-mode-map (make-keymap) "Mix-mode keymap.")
+(defvar mix-minor-mode nil)
+
+;;;###autoload
+(define-minor-mode mix-minor-mode
+  "Mix minor mode. Used to hold keybindings for mix-mode.
+\\{mix-minor-mode-map}"
+  nil " mix" mix-minor-mode-map)
+
+(define-key mix-minor-mode-map (kbd "C-c C-c C-c") 'mix-compile)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-t") 'mix-test)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-o") 'mix-test-current-buffer)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-f") 'mix-test-current-test)
 
 (provide 'mix)
 ;;; mix-process.el ends here
