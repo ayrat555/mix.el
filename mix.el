@@ -24,11 +24,24 @@
 
 (defcustom mix--command-compile "compile"
   "Subcommand used by `mix-compile'."
-  :type 'string)
+  :type 'string
+  :group 'mix)
 
 (defcustom mix--command-test "test"
   "Subcommand used by `mix-test'."
-  :type 'string)
+  :type 'string
+  :group 'mix)
+
+(defcustom mix--envs '("dev" "prod" "test")
+  "The list of mix envs to use as defaults."
+  :type 'list
+  :group 'mix)
+
+(defcustom mix--default-env nil
+  "The default mix env to run mix commands with.
+It's used in prompt"
+  :type '(string boolean)
+  :group 'mix)
 
 (define-derived-mode mix-mode compilation-mode "Mix Mode."
   "Major mode for the Mix buffer."
@@ -59,12 +72,14 @@
   (let ((buffer-read-only nil))
     (ansi-color-apply-on-region (point-min) (point-max))))
 
-(defun mix--start (name command)
+(defun mix--start (name command &optional env)
   "Start the mix process NAME with the mix command COMMAND.
-Returns the created process."
+Returns the created process.
+If ENV is non-nil, prefixes command with MIX_ENV=ENV"
   (let* ((buffer (concat "*mix " name "*"))
          (project-root (mix--project-root))
-         (cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
+         (base-cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
+         (cmd (if env (concat "MIX_ENV=" env " " base-cmd) base-cmd))
          (default-directory (or project-root default-directory)))
     (save-some-buffers (not compilation-ask-about-save)
                        (lambda ()
@@ -72,14 +87,20 @@ Returns the created process."
                               buffer-file-name
                               (string-prefix-p project-root (file-truename buffer-file-name)))))
     (compilation-start cmd 'mix-mode (lambda(_) buffer))
-    (let ((process (get-buffer-process buffer)))
-      process)))
+    (get-buffer-process buffer)))
+
+(defun mix--env-prompt (prefix)
+  "If PREFIX is non-nil, prompt for a mix environment variable."
+  (if prefix
+      (completing-read "mix-environment: " mix--envs nil nil mix--default-env)))
 
 ;;;###autoload
-(defun mix-compile ()
-  "Run the mix compile command."
-  (interactive)
-  (mix--start "compile" mix--command-compile))
+(defun mix-compile (&optional prefix)
+  "Run the mix compile command.
+If PREFIX is non-nil, prompt for a mix environment variable."
+  (interactive "P")
+  (let* ((env (mix--env-prompt t)))
+         (mix--start "compile" mix--command-compile env)))
 
 ;;;###autoload
 (defun mix-test ()
