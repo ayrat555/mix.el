@@ -72,14 +72,14 @@ It's used in prompt"
   (let ((buffer-read-only nil))
     (ansi-color-apply-on-region (point-min) (point-max))))
 
-(defun mix--start (name command &optional env)
+(defun mix--start (name command &optional prompt)
   "Start the mix process NAME with the mix command COMMAND.
 Returns the created process.
-If ENV is non-nil, prefixes command with MIX_ENV=ENV"
+If PROMPT is non-nil, modifies command.  See `mix--prompt`"
   (let* ((buffer (concat "*mix " name "*"))
          (project-root (mix--project-root))
          (base-cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
-         (cmd (if env (concat "MIX_ENV=" env " " base-cmd) base-cmd))
+         (cmd (mix--prompt base-cmd prompt))
          (default-directory (or project-root default-directory)))
     (save-some-buffers (not compilation-ask-about-save)
                        (lambda ()
@@ -89,41 +89,57 @@ If ENV is non-nil, prefixes command with MIX_ENV=ENV"
     (compilation-start cmd 'mix-mode (lambda(_) buffer))
     (get-buffer-process buffer)))
 
-(defun mix--env-prompt (prefix)
-  "If PREFIX is non-nil, prompt for a mix environment variable."
-  (if prefix
-      (completing-read "mix-environment: " mix--envs nil nil mix--default-env)))
+(defun mix--env-prompt ()
+  "Prompt for a mix environment variable."
+  (completing-read "mix-environment: " mix--envs nil nil mix--default-env))
+
+(defun mix--additional-params ()
+  "Prompt for additional mix task params."
+  (read-string "additional mix task params: "))
+
+(defun mix--prompt (command prefix)
+  "Promp for additional params for mix task.
+If PREFIX is equal to (4), prompt for mix MIX_ENV
+and prepend it to COMMAND.  If PREFIX is equal to (16).
+prompt for additional params for mix task and append them to COMMAND.
+IF PREFIX is equal to (64), prompt both for MIX_ENV and additional params."
+  (cond ((equal prefix '(4)) (concat "MIX_ENV=" (mix--env-prompt) " " command))
+        ((equal prefix '(16)) (concat command " " (mix--additional-params)))
+        ((equal prefix '(64)) (concat "MIX_ENV=" (mix--env-prompt) " " command " " (mix--additional-params)))
+        (t command)))
 
 ;;;###autoload
 (defun mix-compile (&optional prefix)
   "Run the mix compile command.
-If PREFIX is non-nil, prompt for a mix environment variable."
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
   (interactive "P")
-  (let* ((env (mix--env-prompt t)))
-         (mix--start "compile" mix--command-compile env)))
+  (mix--start "compile" mix--command-compile prefix))
 
 ;;;###autoload
-(defun mix-test ()
-  "Run the mix test command."
-  (interactive)
-  (mix--start "test" mix--command-test))
+(defun mix-test (&optional prefix)
+  "Run the mix test command.
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+  (interactive "P")
+  (mix--start "test" mix--command-test prefix))
 
 ;;;###autoload
-(defun mix-test-current-buffer ()
-  "Run the mix test for the current buffer."
-  (interactive)
+(defun mix-test-current-buffer (&optional prefix)
+  "Run the mix test for the current buffer.
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+  (interactive "P")
   (let* ((current-file-path (expand-file-name buffer-file-name))
          (test-command (concat mix--command-test " " current-file-path)))
-    (mix--start "test" test-command)))
+    (mix--start "test" test-command prefix)))
 
 ;;;###autoload
-(defun mix-test-current-test ()
-  "Run the mix test for the curret test."
-  (interactive)
+(defun mix-test-current-test (&optional prefix)
+  "Run the mix test for the curret test.
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+  (interactive "P")
   (let* ((current-buffer-line-number (number-to-string (line-number-at-pos)))
          (current-file-path (expand-file-name buffer-file-name))
          (test-command (concat mix--command-test " " current-file-path ":" current-buffer-line-number)))
-    (mix--start "test" test-command)))
+    (mix--start "test" test-command prefix)))
 
 
 (defvar mix-minor-mode-map (make-keymap) "Mix-mode keymap.")
@@ -141,4 +157,5 @@ If PREFIX is non-nil, prompt for a mix environment variable."
 (define-key mix-minor-mode-map (kbd "C-c C-c C-f") 'mix-test-current-test)
 
 (provide 'mix)
-;;; mix-process.el ends here
+
+;;; mix.el ends here
