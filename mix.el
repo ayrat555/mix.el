@@ -67,6 +67,21 @@ It's used in prompt"
     (when root
       (file-truename root))))
 
+(defun mix--remove-mix-prefix-from-task (task)
+  "Remove the first `mix` word from TASK string."
+  (let* ((parts (split-string task "mix "))
+        (parts-without-first-mix (cdr parts)))
+    (concat (mapconcat 'identity parts-without-first-mix " "))))
+
+(defun mix--all-available-tasks ()
+  "List all available mix tasks."
+  (let* ((project-root (mix--project-root))
+         (default-directory (or project-root default-directory))
+         (cmd (concat (shell-quote-argument mix--path-to-bin) " help"))
+         (tasks-string (shell-command-to-string cmd))
+         (raw-tasks (split-string tasks-string "\n")))
+    (mapcar 'mix--remove-mix-prefix-from-task raw-tasks)))
+
 (defun mix--output-filter ()
   "Remove control characters from output."
   (let ((buffer-read-only nil))
@@ -141,6 +156,13 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
          (test-command (concat mix--command-test " " current-file-path ":" current-buffer-line-number)))
     (mix--start "test" test-command prefix)))
 
+(defun mix-execute-task (&optional prefix)
+  "Select and run mix task.
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+  (interactive "P")
+  (let* ((task-with-doc (completing-read "select mix task: " (mix--all-available-tasks)))
+         (task (string-join (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
+    (mix--start "test" task prefix)))
 
 (defvar mix-minor-mode-map (make-keymap) "Mix-mode keymap.")
 (defvar mix-minor-mode nil)
@@ -151,6 +173,7 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
 \\{mix-minor-mode-map}"
   nil " mix" mix-minor-mode-map)
 
+(define-key mix-minor-mode-map (kbd "C-c C-c C-e") 'mix-execute-task)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-c") 'mix-compile)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-t") 'mix-test)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-o") 'mix-test-current-buffer)
