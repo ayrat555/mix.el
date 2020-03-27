@@ -4,6 +4,8 @@
 
 ;;; Code:
 
+(require 'seq)
+
 (defgroup mix nil
   "Mix process group."
   :prefix "mix-"
@@ -67,20 +69,36 @@ It's used in prompt"
     (when root
       (file-truename root))))
 
-(defun mix--remove-mix-prefix-from-task (task)
-  "Remove the first `mix` word from TASK string."
-  (let* ((parts (split-string task "mix "))
-        (parts-without-first-mix (cdr parts)))
-    (concat (mapconcat 'identity parts-without-first-mix " "))))
-
 (defun mix--all-available-tasks ()
   "List all available mix tasks."
-  (let* ((project-root (mix--project-root))
+  (let ((tasks (mix--fetch-all-mix-tasks)))
+    (mix--filter-and-format-mix-tasks tasks)))
+
+(defun mix--fetch-all-mix-tasks ()
+  "Fetches list of raw mix tasks from shell.
+Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
+    (let* ((project-root (mix--project-root))
          (default-directory (or project-root default-directory))
          (cmd (concat (shell-quote-argument mix--path-to-bin) " help"))
-         (tasks-string (shell-command-to-string cmd))
-         (raw-tasks (split-string tasks-string "\n")))
-    (mapcar 'mix--remove-mix-prefix-from-task raw-tasks)))
+         (tasks-string (shell-command-to-string cmd)))
+      (split-string tasks-string "\n")))
+
+(defun mix--filter-and-format-mix-tasks (tasks)
+  "Filter `iex -S mix` and `mix` commands and format mix TASKS."
+  (let* ((tasks-without-iex
+          (seq-filter
+           (lambda (task)
+             (not (or
+                   (string-match-p "iex -S mix" task)
+                   (string-match-p "Runs the default task" task))))
+           tasks)))
+    (mapcar 'mix--remove-mix-prefix-from-task tasks-without-iex)))
+
+(defun mix--remove-mix-prefix-from-task (task)
+  "Remove the first `mix` word from TASK string."
+  (let* ((parts (split-string task "mix[[:blank:]]"))
+        (parts-without-first-mix (cdr parts)))
+    (concat (mapconcat 'identity parts-without-first-mix " "))))
 
 (defun mix--output-filter ()
   "Remove control characters from output."
@@ -90,7 +108,7 @@ It's used in prompt"
 (defun mix--start (name command &optional prompt)
   "Start the mix process NAME with the mix command COMMAND.
 Returns the created process.
-If PROMPT is non-nil, modifies command.  See `mix--prompt`"
+If PROMPT is non-nil, modifies the command.  See `mix--prompt`"
   (let* ((buffer (concat "*mix " name "*"))
          (project-root (mix--project-root))
          (base-cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
@@ -108,9 +126,9 @@ If PROMPT is non-nil, modifies command.  See `mix--prompt`"
   "Prompt for a mix environment variable."
   (completing-read "mix-environment: " mix--envs nil nil mix--default-env))
 
-(defun mix--additional-params ()
-  "Prompt for additional mix task params."
-  (read-string "additional mix task params: "))
+(defun mix--additional-params (command)
+  "Prompt for additional mix task COMMAND params."
+  (read-string (concat "additional mix task params for `" command "`:")))
 
 (defun mix--prompt (command prefix)
   "Promp for additional params for mix task.
@@ -119,8 +137,8 @@ and prepend it to COMMAND.  If PREFIX is equal to (16).
 prompt for additional params for mix task and append them to COMMAND.
 IF PREFIX is equal to (64), prompt both for MIX_ENV and additional params."
   (cond ((equal prefix '(4)) (concat "MIX_ENV=" (mix--env-prompt) " " command))
-        ((equal prefix '(16)) (concat command " " (mix--additional-params)))
-        ((equal prefix '(64)) (concat "MIX_ENV=" (mix--env-prompt) " " command " " (mix--additional-params)))
+        ((equal prefix '(16)) (concat command " " (mix--additional-params command)))
+        ((equal prefix '(64)) (concat "MIX_ENV=" (mix--env-prompt) " " command " " (mix--additional-params command)))
         (t command)))
 
 ;;;###autoload
