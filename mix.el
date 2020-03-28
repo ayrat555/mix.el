@@ -63,6 +63,20 @@ It's used in prompt"
           (or umbrella-app-root (mix--find-closest-mix-file-dir closest-path)))
       (mix--find-closest-mix-file-dir closest-path))))
 
+(defun mix--umbrella-apps ()
+  "Find directories with subprojects in the current umbrella app."
+  (let ((closest-path (locate-dominating-file default-directory "apps")))
+    (if closest-path
+        (let* ((potential-umbrella-apps-path (concat closest-path "/apps"))
+               (potential-umbrella-apps (delete "." (delete ".." (directory-files potential-umbrella-apps-path))))
+               (potential-umbrella-app-directories
+                (mapcar
+                 (lambda (dir-name) (cons dir-name (mix--find-closest-mix-file-dir (concat potential-umbrella-apps-path "/" dir-name))))
+                 potential-umbrella-apps)))
+          (seq-filter (lambda (name-path-pair)
+                        (let ((path (cdr name-path-pair)))
+                          path)) potential-umbrella-app-directories)))))
+
 (defun mix--find-closest-mix-file-dir (path)
   "Find the closest mix file to the current buffer PATH."
     (let ((root (locate-dominating-file path "mix.exs")))
@@ -105,12 +119,13 @@ Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
   (let ((buffer-read-only nil))
     (ansi-color-apply-on-region (point-min) (point-max))))
 
-(defun mix--start (name command &optional prompt)
+(defun mix--start (name command &optional prompt use-umbrella-subprojects)
   "Start the mix process NAME with the mix command COMMAND.
 Returns the created process.
-If PROMPT is non-nil, modifies the command.  See `mix--prompt`"
+If PROMPT is non-nil, modifies the command.  See `mix--prompt`.
+IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
   (let* ((buffer (concat "*mix " name "*"))
-         (project-root (mix--project-root))
+         (project-root (if t (mix--umbrella-subproject-prompt) (mix--project-root)))
          (base-cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
          (cmd (mix--prompt base-cmd prompt))
          (default-directory (or project-root default-directory)))
@@ -125,6 +140,13 @@ If PROMPT is non-nil, modifies the command.  See `mix--prompt`"
 (defun mix--env-prompt ()
   "Prompt for a mix environment variable."
   (completing-read "mix-environment: " mix--envs nil nil mix--default-env))
+
+(defun mix--umbrella-subproject-prompt ()
+  "Prompt for a umbrella subproject."
+  (let* ((umbrella-apps (mix--umbrella-apps))
+         (selected-app (completing-read "project: " (mix--umbrella-apps)))
+         (selected-pair (seq-find (lambda (pair) (equal (car pair) selected-app)) umbrella-apps)))
+    (cdr selected-pair)))
 
 (defun mix--additional-params (command)
   "Prompt for additional mix task COMMAND params."
@@ -156,13 +178,14 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
   (mix--start "test" mix--command-test prefix))
 
 ;;;###autoload
-(defun mix-test-current-buffer (&optional prefix)
+(defun mix-test-current-buffer (&optional prefix use-umbrella-subprojects)
   "Run the mix test for the current buffer.
-If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`.
+IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
   (interactive "P")
   (let* ((current-file-path (expand-file-name buffer-file-name))
          (test-command (concat mix--command-test " " current-file-path)))
-    (mix--start "test" test-command prefix)))
+    (mix--start "test" test-command prefix use-umbrella-subprojects)))
 
 ;;;###autoload
 (defun mix-test-current-test (&optional prefix)
@@ -192,7 +215,6 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
   nil " mix" mix-minor-mode-map)
 
 (define-key mix-minor-mode-map (kbd "C-c C-c C-e") 'mix-execute-task)
-(define-key mix-minor-mode-map (kbd "C-c C-c C-c") 'mix-compile)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-t") 'mix-test)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-o") 'mix-test-current-buffer)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-f") 'mix-test-current-test)
