@@ -83,16 +83,15 @@ It's used in prompt"
     (when root
       (file-truename root))))
 
-(defun mix--all-available-tasks ()
-  "List all available mix tasks."
-  (let ((tasks (mix--fetch-all-mix-tasks)))
+(defun mix--all-available-tasks (project-root)
+  "List all available mix tasks for project in PROJECT-ROOT."
+  (let ((tasks (mix--fetch-all-mix-tasks project-root)))
     (mix--filter-and-format-mix-tasks tasks)))
 
-(defun mix--fetch-all-mix-tasks ()
-  "Fetches list of raw mix tasks from shell.
+(defun mix--fetch-all-mix-tasks (project-root)
+  "Fetches list of raw mix tasks from shell for project in PROJECT-ROOT.
 Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
-    (let* ((project-root (mix--project-root))
-         (default-directory (or project-root default-directory))
+    (let* ((default-directory (or project-root default-directory))
          (cmd (concat (shell-quote-argument mix--path-to-bin) " help"))
          (tasks-string (shell-command-to-string cmd)))
       (split-string tasks-string "\n")))
@@ -119,13 +118,11 @@ Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
   (let ((buffer-read-only nil))
     (ansi-color-apply-on-region (point-min) (point-max))))
 
-(defun mix--start (name command &optional prompt use-umbrella-subprojects)
-  "Start the mix process NAME with the mix command COMMAND.
+(defun mix--start (name command  project-root &optional prompt)
+  "Start the mix process NAME with the mix command COMMAND from PROJECT-ROOT.
 Returns the created process.
-If PROMPT is non-nil, modifies the command.  See `mix--prompt`.
-IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
+If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
   (let* ((buffer (concat "*mix " name "*"))
-         (project-root (if t (mix--umbrella-subproject-prompt) (mix--project-root)))
          (base-cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
          (cmd (mix--prompt base-cmd prompt))
          (default-directory (or project-root default-directory)))
@@ -150,7 +147,7 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
 
 (defun mix--additional-params (command)
   "Prompt for additional mix task COMMAND params."
-  (read-string (concat "additional mix task params for `" command "`:")))
+  (read-string (concat "additional mix task params for `" command "`: ")))
 
 (defun mix--prompt (command prefix)
   "Promp for additional params for mix task.
@@ -164,46 +161,59 @@ IF PREFIX is equal to (64), prompt both for MIX_ENV and additional params."
         (t command)))
 
 ;;;###autoload
-(defun mix-compile (&optional prefix)
+(defun mix-compile (&optional prefix use-umbrella-subprojects)
   "Run the mix compile command.
-If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`
+IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
   (interactive "P")
-  (mix--start "compile" mix--command-compile prefix))
+  (let ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root))))
+    (mix--start "compile" mix--command-compile project-root prefix)))
 
 ;;;###autoload
-(defun mix-test (&optional prefix)
+(defun mix-test (&optional prefix use-umbrella-subprojects)
   "Run the mix test command.
-If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`
+IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
   (interactive "P")
-  (mix--start "test" mix--command-test prefix))
+  (let ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root))))
+    (mix--start "test" mix--command-test project-root prefix)))
 
 ;;;###autoload
 (defun mix-test-current-buffer (&optional prefix use-umbrella-subprojects)
   "Run the mix test for the current buffer.
 If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`.
-IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
+IF USE-UMBRELLA-SUBPROJECTS is t, excutes a test from a subproject
+where a file is located, otherwise starts from the umbrella root."
   (interactive "P")
   (let* ((current-file-path (expand-file-name buffer-file-name))
+         (project-root (if use-umbrella-subprojects (mix--find-closest-mix-file-dir current-file-path) (mix--project-root)))
          (test-command (concat mix--command-test " " current-file-path)))
-    (mix--start "test" test-command prefix use-umbrella-subprojects)))
+    (mix--start "test" test-command project-root prefix)))
 
 ;;;###autoload
-(defun mix-test-current-test (&optional prefix)
+(defun mix-test-current-test (&optional prefix use-umbrella-subprojects)
   "Run the mix test for the curret test.
-If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`.
+IF USE-UMBRELLA-SUBPROJECTS is t, excutes a test from a subproject
+where a test is located, otherwise starts from the umbrella root."
   (interactive "P")
   (let* ((current-buffer-line-number (number-to-string (line-number-at-pos)))
          (current-file-path (expand-file-name buffer-file-name))
+         (project-root (if use-umbrella-subprojects (mix--find-closest-mix-file-dir current-file-path) (mix--project-root)))
+         (current-file-path (expand-file-name buffer-file-name))
          (test-command (concat mix--command-test " " current-file-path ":" current-buffer-line-number)))
-    (mix--start "test" test-command prefix)))
+    (mix--start "test" test-command project-root prefix)))
 
-(defun mix-execute-task (&optional prefix)
+;;;###autoload
+(defun mix-execute-task (&optional  prefix use-umbrella-subprojects)
   "Select and run mix task.
-If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
+If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`
+IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix task from."
   (interactive "P")
-  (let* ((task-with-doc (completing-read "select mix task: " (mix--all-available-tasks)))
+  (let* ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root)))
+         (task-with-doc (completing-read "select mix task: " (mix--all-available-tasks project-root)))
          (task (string-join (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
-    (mix--start "test" task prefix)))
+    (mix--start "test" task project-root prefix)))
 
 (defvar mix-minor-mode-map (make-keymap) "Mix-mode keymap.")
 (defvar mix-minor-mode nil)
@@ -215,10 +225,19 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`"
   nil " mix" mix-minor-mode-map)
 
 (define-key mix-minor-mode-map (kbd "C-c C-c C-e") 'mix-execute-task)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-e") (lambda (prefix) (interactive "P") (mix-execute-task prefix t)))
+
 (define-key mix-minor-mode-map (kbd "C-c C-c C-t") 'mix-test)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-t") (lambda (prefix) (interactive "P") (mix-test prefix t)))
+
 (define-key mix-minor-mode-map (kbd "C-c C-c C-o") 'mix-test-current-buffer)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-o") (lambda (prefix) (interactive "P") (mix-test-current-buffer prefix t)))
+
 (define-key mix-minor-mode-map (kbd "C-c C-c C-f") 'mix-test-current-test)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-f") (lambda (prefix) (interactive "P") (mix-test-current-test prefix t)))
+
+(define-key mix-minor-mode-map (kbd "C-c C-c C-q") 'mix-compile)
+(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-q") (lambda (prefix) (interactive "P") (mix-compile prefix t)))
 
 (provide 'mix)
-
 ;;; mix.el ends here
