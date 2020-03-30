@@ -45,6 +45,8 @@ It's used in prompt"
   :type '(string boolean)
   :group 'mix)
 
+(defvar mix--last-command nil "Last mix command.")
+
 (define-derived-mode mix-mode compilation-mode "Mix Mode."
   "Major mode for the Mix buffer."
   (setq major-mode 'mix-mode)
@@ -101,9 +103,11 @@ Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
   (let* ((tasks-without-iex
           (seq-filter
            (lambda (task)
-             (not (or
+             (and
+              (not (or
                    (string-match-p "iex -S mix" task)
-                   (string-match-p "Runs the default task" task))))
+                   (string-match-p "Runs the default task" task)))
+              (string-match-p "#" task)))
            tasks)))
     (mapcar 'mix--remove-mix-prefix-from-task tasks-without-iex)))
 
@@ -118,12 +122,15 @@ Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
   (let ((buffer-read-only nil))
     (ansi-color-apply-on-region (point-min) (point-max))))
 
-(defun mix--start (name command  project-root &optional prompt)
+(defun mix--start (name command project-root &optional prompt)
   "Start the mix process NAME with the mix command COMMAND from PROJECT-ROOT.
 Returns the created process.
 If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
   (let* ((buffer (concat "*mix " name "*"))
-         (base-cmd (concat (shell-quote-argument mix--path-to-bin) " " command))
+         (path-to-bin (shell-quote-argument mix--path-to-bin))
+         (base-cmd (if (string-match-p path-to-bin  command)
+                       command
+                     (concat path-to-bin " " command)))
          (cmd (mix--prompt base-cmd prompt))
          (default-directory (or project-root default-directory)))
     (save-some-buffers (not compilation-ask-about-save)
@@ -131,6 +138,7 @@ If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
                          (and project-root
                               buffer-file-name
                               (string-prefix-p project-root (file-truename buffer-file-name)))))
+    (setq mix--last-command (list name cmd project-root))
     (compilation-start cmd 'mix-mode (lambda(_) buffer))
     (get-buffer-process buffer)))
 
@@ -213,7 +221,15 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
   (let* ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root)))
          (task-with-doc (completing-read "select mix task: " (mix--all-available-tasks project-root)))
          (task (string-join (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
-    (mix--start "test" task project-root prefix)))
+    (mix--start "execute" task project-root prefix)))
+
+;;;###autoload
+(defun mix-last-command ()
+  "Execute the last mix task."
+  (interactive)
+  (if mix--last-command
+      (apply 'mix--start mix--last-command)
+    (message "Last command is not found.")))
 
 (defvar mix-minor-mode-map (make-keymap) "Mix-mode keymap.")
 (defvar mix-minor-mode nil)
@@ -238,6 +254,8 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
 
 (define-key mix-minor-mode-map (kbd "C-c C-c C-q") 'mix-compile)
 (define-key mix-minor-mode-map (kbd "C-c C-c C-c C-q") (lambda (prefix) (interactive "P") (mix-compile prefix t)))
+
+(define-key mix-minor-mode-map (kbd "C-c C-c C-l") 'mix-last-command)
 
 (provide 'mix)
 ;;; mix.el ends here
