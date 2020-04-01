@@ -5,6 +5,7 @@
 ;;; Code:
 
 (require 'seq)
+(require 'ansi-color)
 
 (defgroup mix nil
   "Mix process group."
@@ -60,7 +61,7 @@ It's used in prompt"
   (let ((closest-path (or buffer-file-name default-directory)))
     (if (and mix--start-in-umbrella (string-match-p (regexp-quote "apps") closest-path))
         (let* ((potential-umbrella-root-parts (butlast (split-string closest-path "/apps/")))
-               (potential-umbrella-root (string-join potential-umbrella-root-parts ""))
+               (potential-umbrella-root (mapconcat 'identity potential-umbrella-root-parts ""))
                (umbrella-app-root (mix--find-closest-mix-file-dir potential-umbrella-root)))
           (or umbrella-app-root (mix--find-closest-mix-file-dir closest-path)))
       (mix--find-closest-mix-file-dir closest-path))))
@@ -220,7 +221,7 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
   (interactive "P")
   (let* ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root)))
          (task-with-doc (completing-read "select mix task: " (mix--all-available-tasks project-root)))
-         (task (string-join (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
+         (task (mapconcat 'identity (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
     (mix--start "execute" task project-root prefix)))
 
 ;;;###autoload
