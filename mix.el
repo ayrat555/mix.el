@@ -2,6 +2,24 @@
 
 ;; Copyright (C) 2020 Ayrat Badykov
 
+;; Permission is hereby granted, free of charge, to any person obtaining a copy of
+;; this software and associated documentation files (the "Software"), to deal in
+;; the Software without restriction, including without limitation the rights to
+;; use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+;; of the Software, and to permit persons to whom the Software is furnished to do
+;; so, subject to the following conditions:
+;;
+;; The above copyright notice and this permission notice shall be included in all
+;; copies or substantial portions of the Software.
+;;
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+
 ;; Author: Ayrat Badykov <ayratin555@gmail.com>
 ;; URL: https://github.com/ayrat555/mix.el
 ;; Version  : 0.0.1
@@ -44,35 +62,35 @@
   :prefix "mix-"
   :group 'mix)
 
-(defcustom mix--path-to-bin
+(defcustom mix-path-to-bin
   (or (executable-find "mix")
       "/usr/bin/mix")
   "Path to the mix executable."
   :type 'file
   :group 'mix)
 
-(defcustom mix--start-in-umbrella
+(defcustom mix-start-in-umbrella
   t
   "Start mix command in the umbrella app root or use a subproject."
   :type 'boolean
   :group 'mix)
 
-(defcustom mix--command-compile "compile"
+(defcustom mix-command-compile "compile"
   "Subcommand used by `mix-compile'."
   :type 'string
   :group 'mix)
 
-(defcustom mix--command-test "test"
+(defcustom mix-command-test "test"
   "Subcommand used by `mix-test'."
   :type 'string
   :group 'mix)
 
-(defcustom mix--envs '("dev" "prod" "test")
+(defcustom mix-envs '("dev" "prod" "test")
   "The list of mix envs to use as defaults."
   :type 'list
   :group 'mix)
 
-(defcustom mix--default-env nil
+(defcustom mix-default-env nil
   "The default mix env to run mix commands with.
 It's used in prompt"
   :type '(string boolean)
@@ -80,20 +98,18 @@ It's used in prompt"
 
 (defvar mix--last-command nil "Last mix command.")
 
-(define-derived-mode mix-mode compilation-mode "Mix Mode."
+(define-derived-mode mix-mode compilation-mode "Mix"
   "Major mode for the Mix buffer."
-  (setq major-mode 'mix-mode)
-  (setq mode-name "Mix")
   (setq buffer-read-only t)
   (setq-local truncate-lines t)
-  (add-hook 'compilation-filter-hook 'mix--output-filter))
+  (add-hook 'compilation-filter-hook #'mix--output-filter))
 
 (defun mix--project-root ()
   "Find the root of the current mix project."
   (let ((closest-path (or buffer-file-name default-directory)))
-    (if (and mix--start-in-umbrella (string-match-p (regexp-quote "apps") closest-path))
+    (if (and mix-start-in-umbrella (string-match-p (regexp-quote "apps") closest-path))
         (let* ((potential-umbrella-root-parts (butlast (split-string closest-path "/apps/")))
-               (potential-umbrella-root (mapconcat 'identity potential-umbrella-root-parts ""))
+               (potential-umbrella-root (mapconcat #'identity potential-umbrella-root-parts ""))
                (umbrella-app-root (mix--find-closest-mix-file-dir potential-umbrella-root)))
           (or umbrella-app-root (mix--find-closest-mix-file-dir closest-path)))
       (mix--find-closest-mix-file-dir closest-path))))
@@ -127,7 +143,7 @@ It's used in prompt"
   "Fetches list of raw mix tasks from shell for project in PROJECT-ROOT.
 Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
     (let* ((default-directory (or project-root default-directory))
-         (cmd (concat (shell-quote-argument mix--path-to-bin) " help"))
+         (cmd (concat (shell-quote-argument mix-path-to-bin) " help"))
          (tasks-string (shell-command-to-string cmd)))
       (split-string tasks-string "\n")))
 
@@ -142,13 +158,13 @@ Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
                    (string-match-p "Runs the default task" task)))
               (string-match-p "#" task)))
            tasks)))
-    (mapcar 'mix--remove-mix-prefix-from-task tasks-without-iex)))
+    (mapcar #'mix--remove-mix-prefix-from-task tasks-without-iex)))
 
 (defun mix--remove-mix-prefix-from-task (task)
   "Remove the first `mix` word from TASK string."
   (let* ((parts (split-string task "mix[[:blank:]]"))
         (parts-without-first-mix (cdr parts)))
-    (concat (mapconcat 'identity parts-without-first-mix " "))))
+    (concat (mapconcat #'identity parts-without-first-mix " "))))
 
 (defun mix--output-filter ()
   "Remove control characters from output."
@@ -160,7 +176,7 @@ Use `mix--all-available-tasks` to fetch formatted and filetered tasks."
 Returns the created process.
 If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
   (let* ((buffer (concat "*mix " name "*"))
-         (path-to-bin (shell-quote-argument mix--path-to-bin))
+         (path-to-bin (shell-quote-argument mix-path-to-bin))
          (base-cmd (if (string-match-p path-to-bin  command)
                        command
                      (concat path-to-bin " " command)))
@@ -177,7 +193,7 @@ If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
 
 (defun mix--env-prompt ()
   "Prompt for a mix environment variable."
-  (completing-read "mix-environment: " mix--envs nil nil mix--default-env))
+  (completing-read "mix-environment: " mix-envs nil nil mix-default-env))
 
 (defun mix--umbrella-subproject-prompt ()
   "Prompt for a umbrella subproject."
@@ -208,7 +224,7 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`
 IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
   (interactive "P")
   (let ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root))))
-    (mix--start "compile" mix--command-compile project-root prefix)))
+    (mix--start "compile" mix-command-compile project-root prefix)))
 
 ;;;###autoload
 (defun mix-test (&optional prefix use-umbrella-subprojects)
@@ -217,7 +233,7 @@ If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`
 IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject."
   (interactive "P")
   (let ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root))))
-    (mix--start "test" mix--command-test project-root prefix)))
+    (mix--start "test" mix-command-test project-root prefix)))
 
 ;;;###autoload
 (defun mix-test-current-buffer (&optional prefix use-umbrella-subprojects)
@@ -228,7 +244,7 @@ where a file is located, otherwise starts from the umbrella root."
   (interactive "P")
   (let* ((current-file-path (expand-file-name buffer-file-name))
          (project-root (if use-umbrella-subprojects (mix--find-closest-mix-file-dir current-file-path) (mix--project-root)))
-         (test-command (concat mix--command-test " " current-file-path)))
+         (test-command (concat mix-command-test " " current-file-path)))
     (mix--start "test" test-command project-root prefix)))
 
 ;;;###autoload
@@ -242,7 +258,7 @@ where a test is located, otherwise starts from the umbrella root."
          (current-file-path (expand-file-name buffer-file-name))
          (project-root (if use-umbrella-subprojects (mix--find-closest-mix-file-dir current-file-path) (mix--project-root)))
          (current-file-path (expand-file-name buffer-file-name))
-         (test-command (concat mix--command-test " " current-file-path ":" current-buffer-line-number)))
+         (test-command (concat mix-command-test " " current-file-path ":" current-buffer-line-number)))
     (mix--start "test" test-command project-root prefix)))
 
 ;;;###autoload
@@ -253,7 +269,7 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
   (interactive "P")
   (let* ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root)))
          (task-with-doc (completing-read "select mix task: " (mix--all-available-tasks project-root)))
-         (task (mapconcat 'identity (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
+         (task (mapconcat #'identity (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
     (mix--start "execute" task project-root prefix)))
 
 ;;;###autoload
@@ -261,34 +277,31 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
   "Execute the last mix task."
   (interactive)
   (if mix--last-command
-      (apply 'mix--start mix--last-command)
+      (apply #'mix--start mix--last-command)
     (message "Last command is not found.")))
 
-(defvar mix-minor-mode-map (make-keymap) "Mix-mode keymap.")
-(defvar mix-minor-mode nil)
+(defvar mix-minor-mode-map
+  (let ((km (make-sparse-keymap)))
+    (define-key km (kbd "C-c C-c C-e") 'mix-execute-task)
+    (define-key km (kbd "C-c C-c C-c C-e") (lambda (prefix) (interactive "P") (mix-execute-task prefix t)))
+    (define-key km (kbd "C-c C-c C-t") 'mix-test)
+    (define-key km (kbd "C-c C-c C-c C-t") (lambda (prefix) (interactive "P") (mix-test prefix t)))
+    (define-key km (kbd "C-c C-c C-o") 'mix-test-current-buffer)
+    (define-key km (kbd "C-c C-c C-c C-o") (lambda (prefix) (interactive "P") (mix-test-current-buffer prefix t)))
+    (define-key km (kbd "C-c C-c C-f") 'mix-test-current-test)
+    (define-key km (kbd "C-c C-c C-c C-f") (lambda (prefix) (interactive "P") (mix-test-current-test prefix t)))
+    (define-key km (kbd "C-c C-c C-q") 'mix-compile)
+    (define-key km (kbd "C-c C-c C-c C-q") (lambda (prefix) (interactive "P") (mix-compile prefix t)))
+    (define-key km (kbd "C-c C-c C-l") 'mix-last-command)
+    km)
+  "Mix-mode keymap.")
 
+(defvar mix-minor-mode nil)
 ;;;###autoload
 (define-minor-mode mix-minor-mode
   "Mix minor mode. Used to hold keybindings for mix-mode.
 \\{mix-minor-mode-map}"
   nil " mix" mix-minor-mode-map)
-
-(define-key mix-minor-mode-map (kbd "C-c C-c C-e") 'mix-execute-task)
-(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-e") (lambda (prefix) (interactive "P") (mix-execute-task prefix t)))
-
-(define-key mix-minor-mode-map (kbd "C-c C-c C-t") 'mix-test)
-(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-t") (lambda (prefix) (interactive "P") (mix-test prefix t)))
-
-(define-key mix-minor-mode-map (kbd "C-c C-c C-o") 'mix-test-current-buffer)
-(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-o") (lambda (prefix) (interactive "P") (mix-test-current-buffer prefix t)))
-
-(define-key mix-minor-mode-map (kbd "C-c C-c C-f") 'mix-test-current-test)
-(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-f") (lambda (prefix) (interactive "P") (mix-test-current-test prefix t)))
-
-(define-key mix-minor-mode-map (kbd "C-c C-c C-q") 'mix-compile)
-(define-key mix-minor-mode-map (kbd "C-c C-c C-c C-q") (lambda (prefix) (interactive "P") (mix-compile prefix t)))
-
-(define-key mix-minor-mode-map (kbd "C-c C-c C-l") 'mix-last-command)
 
 (provide 'mix)
 ;;; mix.el ends here
