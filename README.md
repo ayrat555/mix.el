@@ -10,7 +10,11 @@ I spend my days writing Elixir code and sometimes I want to execute a Mix task f
 
 ## Installation
 
-Currently, `mix.el` is not available through MELPA. If there is a demand for it, I'll upload the package there.
+### MELPA
+
+Set up the MELPA or MELPA Stable repository if you haven't already and install with M-x package-install RET mix RET.
+
+### From file
 
 Add `mix.el` to your load path:
 

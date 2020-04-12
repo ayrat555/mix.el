@@ -1,4 +1,4 @@
-;;; mix.el --- Mix Major Mode
+;;; mix.el --- Mix Major Mode. Build Elixir using Mix -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Ayrat Badykov
 
@@ -27,6 +27,11 @@
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
+
+;; Add a hook to the mode that you're using with Elixir, for example, `elixir-mode`:
+;;
+;; (add-hook 'elixir-mode-hook 'mix-minor-mode)
+;;
 
 ;;; C-c C-c C-e - mix-execute-task - List all available tasks and execute one of them.  It starts in the root of the umbrella app.  As a bonus, you'll get a documentation string because mix.el parses shell output of mix help directly.  Starts in the umbrella root directory.
 ;;; C-c C-c C-c C-e - mix-execute-task in an umbrella subproject - The same as mix-execute-task but allows you choose a subproject to execute a task in.
@@ -297,6 +302,7 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
   "Mix-mode keymap.")
 
 (defvar mix-minor-mode nil)
+
 ;;;###autoload
 (define-minor-mode mix-minor-mode
   "Mix minor mode. Used to hold keybindings for mix-mode.
