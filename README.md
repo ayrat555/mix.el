@@ -30,6 +30,12 @@ Add a hook to the mode that you're using with Elixir, for example, `elixir-mode`
 (add-hook 'elixir-mode-hook 'mix-minor-mode)
 ```
 
+Set `compilation-scroll-output` to non-nil to scroll the *mix* buffer window as output appears. The value ‘first-error’ stops scrolling at the first error, and leaves point on its location in the *mix* buffer. For example:
+
+``` lisp
+(setq compilation-scroll-output t)
+```
+
 ## Usage
 
 `C-c C-c C-e` - `mix-execute-task` - List all available tasks and execute one of them. It starts in the root of the umbrella app. As a bonus, you'll get a documentation string because `mix.el` parses shell output of `mix help` directly. Starts in the umbrella root directory.
