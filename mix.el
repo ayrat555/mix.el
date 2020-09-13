@@ -200,6 +200,12 @@ If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
   "Prompt for a mix environment variable."
   (completing-read "mix-environment: " mix-envs nil nil mix-default-env))
 
+(defun mix--current-test-path (full-path)
+  "Return relative test file according to FULL-PATH path that startes in `test` directory."
+  (let* ((parts (split-string full-path "/test/"))
+        (test-file (car (cdr parts))))
+    (concat "test/" test-file)))
+
 (defun mix--umbrella-subproject-prompt ()
   "Prompt for a umbrella subproject."
   (let* ((umbrella-apps (mix--umbrella-apps))
@@ -248,8 +254,9 @@ IF USE-UMBRELLA-SUBPROJECTS is t, excutes a test from a subproject
 where a file is located, otherwise starts from the umbrella root."
   (interactive "P")
   (let* ((current-file-path (expand-file-name buffer-file-name))
+         (relative-path (mix--current-test-path current-file-path))
          (project-root (if use-umbrella-subprojects (mix--find-closest-mix-file-dir current-file-path) (mix--project-root)))
-         (test-command (concat mix-command-test " " current-file-path)))
+         (test-command (concat mix-command-test " " relative-path)))
     (mix--start "test" test-command project-root prefix)))
 
 ;;;###autoload
@@ -261,9 +268,9 @@ where a test is located, otherwise starts from the umbrella root."
   (interactive "P")
   (let* ((current-buffer-line-number (number-to-string (line-number-at-pos)))
          (current-file-path (expand-file-name buffer-file-name))
+         (relative-file-path (mix--current-test-path current-file-path))
          (project-root (if use-umbrella-subprojects (mix--find-closest-mix-file-dir current-file-path) (mix--project-root)))
-         (current-file-path (expand-file-name buffer-file-name))
-         (test-command (concat mix-command-test " " current-file-path ":" current-buffer-line-number)))
+         (test-command (concat mix-command-test " " relative-file-path ":" current-buffer-line-number)))
     (mix--start "test" test-command project-root prefix)))
 
 ;;;###autoload
