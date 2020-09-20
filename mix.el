@@ -201,10 +201,15 @@ If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
   (completing-read "mix-environment: " mix-envs nil nil mix-default-env))
 
 (defun mix--current-test-path (full-path)
-  "Return relative test file according to FULL-PATH path that startes in `test` directory."
+  "Return relative test file according to FULL-PATH.
+If FULL-PATH contains `test` directory in its path, the function
+will return a path relative to the `test` directory, otherwise the original
+path will be returned."
   (let* ((parts (split-string full-path "/test/"))
-        (test-file (car (cdr parts))))
-    (concat "test/" test-file)))
+         (test-file (car (cdr parts))))
+    (if test-file
+        (concat "test/" test-file)
+      full-path)))
 
 (defun mix--umbrella-subproject-prompt ()
   "Prompt for a umbrella subproject."
