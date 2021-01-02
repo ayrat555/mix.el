@@ -22,7 +22,7 @@
 
 ;; Author: Ayrat Badykov <ayratin555@gmail.com>
 ;; URL: https://github.com/ayrat555/mix.el
-;; Version  : 0.0.1
+;; Version  : 0.0.2
 ;; Keywords: tools
 ;; Package-Requires: ((emacs "25.1"))
 
@@ -279,14 +279,16 @@ where a test is located, otherwise starts from the umbrella root."
     (mix--start "test" test-command project-root prefix)))
 
 ;;;###autoload
-(defun mix-execute-task (&optional  prefix use-umbrella-subprojects)
+(defun mix-execute-task (&optional prefix use-umbrella-subprojects)
   "Select and run mix task.
 If PREFIX is non-nil, prompt for additional params.  See `mix--prompt`
 IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix task from."
   (interactive "P")
   (let* ((project-root (if use-umbrella-subprojects (mix--umbrella-subproject-prompt) (mix--project-root)))
          (task-with-doc (completing-read "select mix task: " (mix--all-available-tasks project-root)))
-         (task (mapconcat #'identity (butlast (split-string task-with-doc "#" t split-string-default-separators)) "")))
+         (task-with-doc-list (split-string task-with-doc "#" t split-string-default-separators))
+         (task-without-doc-list (if (eq (length task-with-doc-list) 1) task-with-doc-list (butlast task-with-doc-list)))
+         (task (mapconcat #'identity task-without-doc-list  "")))
     (mix--start "execute" task project-root prefix)))
 
 ;;;###autoload
