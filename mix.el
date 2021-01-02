@@ -33,15 +33,15 @@
 ;; (add-hook 'elixir-mode-hook 'mix-minor-mode)
 ;;
 
-;;; C-c C-c C-e - mix-execute-task - List all available tasks and execute one of them.  It starts in the root of the umbrella app.  As a bonus, you'll get a documentation string because mix.el parses shell output of mix help directly.  Starts in the umbrella root directory.
-;;; C-c C-c C-c C-e - mix-execute-task in an umbrella subproject - The same as mix-execute-task but allows you choose a subproject to execute a task in.
-;;; C-c C-c C-t - mix-test - Run all test in the app.  It starts in the umbrella root directory.
-;;; C-c C-c C-c C-t - mix-test in an umbrella subproject - The same as mix-test but allows you to choose a subproject to run tests in.
-;;; C-c C-c C-o - mix-test-current-buffer - Run all tests in the current buffer.  It starts in the umbrella root directory.
-;;; C-c C-c C-c C-o - mix-test-current-buffer in an umbrella subproject - The same as mix-test-current-buffer but runs tests directly from subproject directory.
-;;; C-c C-c C-f - mix-test-current-test - Run the current test where pointer is located.  It starts in the umbrella root directory.
-;;; C-c C-c C-c C-f - mix-test-current-test in an umbrella subproject - The same as mix-test-current-test but runs a test directly from subproject directory.
-;;; C-c C-c C-l - mix-last-command - Execute the last mix command.
+;;; C-c d e - mix-execute-task - List all available tasks and execute one of them.  It starts in the root of the umbrella app.  As a bonus, you'll get a documentation string because mix.el parses shell output of mix help directly.  Starts in the umbrella root directory.
+;;; C-c d d e - mix-execute-task in an umbrella subproject - The same as mix-execute-task but allows you choose a subproject to execute a task in.
+;;; C-c d t - mix-test - Run all test in the app.  It starts in the umbrella root directory.
+;;; C-c d d t - mix-test in an umbrella subproject - The same as mix-test but allows you to choose a subproject to run tests in.
+;;; C-c d o - mix-test-current-buffer - Run all tests in the current buffer.  It starts in the umbrella root directory.
+;;; C-c d d o - mix-test-current-buffer in an umbrella subproject - The same as mix-test-current-buffer but runs tests directly from subproject directory.
+;;; C-c d f - mix-test-current-test - Run the current test where pointer is located.  It starts in the umbrella root directory.
+;;; C-c d d f - mix-test-current-test in an umbrella subproject - The same as mix-test-current-test but runs a test directly from subproject directory.
+;;; C-c d l - mix-last-command - Execute the last mix command.
 ;;;
 ;;; Prefixes to modify commands before execution
 ;;; Add these prefixes before commands described in the previous section.
@@ -52,10 +52,10 @@
 ;;;
 ;;; For example, to create a migration in a subproject you should press:
 ;;;
-;;; C-u C-u C-c C-c C-c C-e:
+;;; C-u C-u C-c d d e:
 ;;;
 ;;; C-u C-u - to be prompted for migration name
-;;; C-c C-c C-c C-e - to select a mix project and ecto.gen.migration task
+;;; C-c d d e - to select a mix project and ecto.gen.migration task
 
 ;;; Code:
 
@@ -301,17 +301,17 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
 
 (defvar mix-minor-mode-map
   (let ((km (make-sparse-keymap)))
-    (define-key km (kbd "C-c C-c C-e") 'mix-execute-task)
-    (define-key km (kbd "C-c C-c C-c C-e") (lambda (prefix) (interactive "P") (mix-execute-task prefix t)))
-    (define-key km (kbd "C-c C-c C-t") 'mix-test)
-    (define-key km (kbd "C-c C-c C-c C-t") (lambda (prefix) (interactive "P") (mix-test prefix t)))
-    (define-key km (kbd "C-c C-c C-o") 'mix-test-current-buffer)
-    (define-key km (kbd "C-c C-c C-c C-o") (lambda (prefix) (interactive "P") (mix-test-current-buffer prefix t)))
-    (define-key km (kbd "C-c C-c C-f") 'mix-test-current-test)
-    (define-key km (kbd "C-c C-c C-c C-f") (lambda (prefix) (interactive "P") (mix-test-current-test prefix t)))
-    (define-key km (kbd "C-c C-c C-q") 'mix-compile)
-    (define-key km (kbd "C-c C-c C-c C-q") (lambda (prefix) (interactive "P") (mix-compile prefix t)))
-    (define-key km (kbd "C-c C-c C-l") 'mix-last-command)
+    (define-key km (kbd "C-c d e") 'mix-execute-task)
+    (define-key km (kbd "C-c d d e") (lambda (prefix) (interactive "P") (mix-execute-task prefix t)))
+    (define-key km (kbd "C-c d t") 'mix-test)
+    (define-key km (kbd "C-c d d t") (lambda (prefix) (interactive "P") (mix-test prefix t)))
+    (define-key km (kbd "C-c d o") 'mix-test-current-buffer)
+    (define-key km (kbd "C-c d d o") (lambda (prefix) (interactive "P") (mix-test-current-buffer prefix t)))
+    (define-key km (kbd "C-c d f") 'mix-test-current-test)
+    (define-key km (kbd "C-c d d f") (lambda (prefix) (interactive "P") (mix-test-current-test prefix t)))
+    (define-key km (kbd "C-c d q") 'mix-compile)
+    (define-key km (kbd "C-c d d q") (lambda (prefix) (interactive "P") (mix-compile prefix t)))
+    (define-key km (kbd "C-c d l") 'mix-last-command)
     km)
   "Mix-mode keymap.")
 
