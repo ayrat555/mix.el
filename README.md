@@ -58,6 +58,12 @@ Set `compilation-scroll-output` to non-nil to scroll the *mix* buffer window as 
 
 These are all commands that I use most frequently. You can execute any mix tasks (credo, dialyzer etc) available in the project using `mix-execute-task`. If you have suggestions for additional commands to add keybindings to, please create an issue.
 
+To change prefix (default <kbd>C-c d</kbd>) use:
+
+```el
+ (define-key mix-minor-mode-map (kbd ...) 'mix-minor-mode-command-map)
+```
+
 ## Prefixes to modify commands before execution
 
 Add these prefixes before commands described in the previous section.
