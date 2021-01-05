@@ -22,7 +22,7 @@
 
 ;; Author: Ayrat Badykov <ayratin555@gmail.com>
 ;; URL: https://github.com/ayrat555/mix.el
-;; Version  : 0.0.2
+;; Version  : 0.0.3
 ;; Keywords: tools
 ;; Package-Requires: ((emacs "25.1"))
 
