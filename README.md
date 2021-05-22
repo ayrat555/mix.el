@@ -2,11 +2,19 @@
 
 Emacs Minor Mode for Mix, a build tool that ships with Elixir.
 
-## Introduction
+## Demo
 
-I've been using `alchemist` and its built-in functions to work with mix tasks from Emacs: to execute a specific test, to execute tests in a file, to list all tasks etc. They work ok if you don't work with umbrella apps. Umbrella project is an application split into multiple subprojects. `alchemist` uses custom Elixir app under the hood. This Elixir app is initialized only for a specific application. So it's either initialized for a subproject or an umbrella project. Maybe there are customizable variables that allow you to work with umbrella projects and subprojects at the same time but I couldn't find any.
+### Select MIX_ENV and add custom params (`MIX_ENV=dev mix help hex.config`)
 
-I spend my days writing Elixir code and sometimes I want to execute a Mix task from the root directory for the whole project (for example, to run a credo check) and sometimes I want to execute a task from a subproject (for example, to fetch deps only for this subproject). `mix.el` allows you to do it. Also, it allows you to add additional parameters before executing a mix task.
+![demo1](demo/demo1.gif)
+
+`C-u C-u C-u C-c d e`
+
+### Select a project and run a command (`mix clean` inside of subproject)
+
+![demo1](demo/demo2.gif)
+
+`C-c d d e`
 
 ## Installation
 
@@ -38,23 +46,23 @@ Set `compilation-scroll-output` to non-nil to scroll the *mix* buffer window as 
 
 ## Usage
 
-<kbd> `C-c d e` </kbd> - `mix-execute-task` - List all available tasks and execute one of them. It starts in the root of the umbrella app. As a bonus, you'll get a documentation string because `mix.el` parses shell output of `mix help` directly. Starts in the umbrella root directory.
+<kbd> C-c d e </kbd> - `mix-execute-task` - List all available tasks and execute one of them. It starts in the root of the umbrella app. As a bonus, you'll get a documentation string because `mix.el` parses shell output of `mix help` directly. Starts in the umbrella root directory.
 
-<kbd> `C-c d d e` </kbd> - `mix-execute-task` in an umbrella subproject - The same as `mix-execute-task` but allows you choose a subproject to execute a task in.
+<kbd> C-c d d e </kbd> - `mix-execute-task` in an umbrella subproject - The same as `mix-execute-task` but allows you choose a subproject to execute a task in.
 
-<kbd> `C-c d t` </kbd> - `mix-test` - Run all test in the app. It starts in the umbrella root directory.
+<kbd> C-c d t </kbd> - `mix-test` - Run all test in the app. It starts in the umbrella root directory.
 
-<kbd> `C-c d d t` </kbd> - `mix-test` in an umbrella subproject - The same as `mix-test` but allows you to choose a subproject to run tests in.
+<kbd> C-c d d t </kbd> - `mix-test` in an umbrella subproject - The same as `mix-test` but allows you to choose a subproject to run tests in.
 
-<kbd> `C-c d o` </kbd> - `mix-test-current-buffer` - Run all tests in the current buffer. It starts in the umbrella root directory.
+<kbd> C-c d o </kbd> - `mix-test-current-buffer` - Run all tests in the current buffer. It starts in the umbrella root directory.
 
-<kbd> `C-c d d o` </kbd> - `mix-test-current-buffer` in an umbrella subproject - The same as `mix-test-current-buffer` but runs tests directly from subproject directory.
+<kbd> C-c d d o </kbd> - `mix-test-current-buffer` in an umbrella subproject - The same as `mix-test-current-buffer` but runs tests directly from subproject directory.
 
-<kbd> `C-c d f` </kbd> - `mix-test-current-test` - Run the current test where pointer is located. It starts in the umbrella root directory.
+<kbd> C-c d f </kbd> - `mix-test-current-test` - Run the current test where pointer is located. It starts in the umbrella root directory.
 
-<kbd> `C-c d d f` </kbd> - `mix-test-current-test` in an umbrella subproject - The same as `mix-test-current-test` but runs a test directly from subproject directory.
+<kbd> C-c d d f </kbd> - `mix-test-current-test` in an umbrella subproject - The same as `mix-test-current-test` but runs a test directly from subproject directory.
 
-<kbd> `C-c d l` </kbd> - `mix-last-command` - Execute the last mix command.
+<kbd> C-c d l </kbd> - `mix-last-command` - Execute the last mix command.
 
 These are all commands that I use most frequently. You can execute any mix tasks (credo, dialyzer etc) available in the project using `mix-execute-task`. If you have suggestions for additional commands to add keybindings to, please create an issue.
 
