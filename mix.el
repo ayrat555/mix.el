@@ -322,8 +322,6 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
     map)
   "Mix-mode keymap.")
 
-(defvar mix-minor-mode nil)
-
 ;;;###autoload
 (define-minor-mode mix-minor-mode
   "Mix minor mode. Used to hold keybindings for mix-mode.
