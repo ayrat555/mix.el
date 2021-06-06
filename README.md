@@ -22,6 +22,14 @@ Emacs Minor Mode for Mix, a build tool that ships with Elixir.
 
 Set up the MELPA or MELPA Stable repository if you haven't already and install with M-x package-install RET mix RET.
 
+Or you can use `use-package`:
+
+```lisp
+(use-package mix
+  :config
+  (add-hook 'elixir-mode-hook 'mix-minor-mode))
+```
+
 ### From file
 
 Add `mix.el` to your load path:
