@@ -193,7 +193,7 @@ If PROMPT is non-nil, modifies the command.  See `mix--prompt`."
                               buffer-file-name
                               (string-prefix-p project-root (file-truename buffer-file-name)))))
     (setq mix--last-command (list name cmd project-root))
-    (compilation-start cmd 'mix-mode (lambda(_) buffer))
+    (compile cmd t)
     (get-buffer-process buffer)))
 
 (defun mix--env-prompt ()
