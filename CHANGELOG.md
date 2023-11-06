@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.4 (2023-11-06)
+
+### Enhancements
+- Listen to prompts from mix commands ([#9](https://github.com/ayrat555/mix.el/pull/9))
+
 ## 0.0.3 (2021-01-05)
 
 ### Enhancements
