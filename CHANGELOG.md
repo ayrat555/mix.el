@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.5 (2024-01-20)
+
+### Enhancements
+- Add regexp to match file path in the compilation buffer ([#12](https://github.com/ayrat555/mix.el/pull/12))
+
 ## 0.0.4 (2023-11-06)
 
 ### Enhancements
