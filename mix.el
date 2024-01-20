@@ -61,6 +61,7 @@
 
 (require 'seq)
 (require 'ansi-color)
+(require 'compile)
 
 (defgroup mix nil
   "Mix process group."
@@ -322,11 +323,25 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
     map)
   "Mix-mode keymap.")
 
+;; Match test run failures and panics during compilation as
+;; compilation warnings
+(defvar mix-compilation-regexps
+  '("^[[:space:]]*\\(\\(.*\\.exs?\\):\\([0-9]+\\)\\)"
+    2 3 nil nil 1)
+  "Specifications for matching panics in cargo test invocations.
+See `compilation-error-regexp-alist' for help on their format.")
+
 ;;;###autoload
 (define-minor-mode mix-minor-mode
   "Mix minor mode. Used to hold keybindings for mix-mode.
 \\{mix-minor-mode-map}"
   nil " mix" mix-minor-mode-map)
+
+(eval-after-load 'compile
+  '(progn
+     (add-to-list 'compilation-error-regexp-alist-alist
+                  (cons 'mix mix-compilation-regexps))
+     (add-to-list 'compilation-error-regexp-alist 'mix)))
 
 (provide 'mix)
 ;;; mix.el ends here
