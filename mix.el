@@ -328,7 +328,7 @@ IF USE-UMBRELLA-SUBPROJECTS is t, prompt for umbrells subproject to start a mix 
 (defvar mix-compilation-regexps
   '("\\(\\([^[:space:]]*\\.exs?\\):\\([0-9]+\\)\\)"
     2 3 nil nil 1)
-  "Specifications for matching panics in cargo test invocations.
+  "Specifications for matching file paths in mix commands invocations.
 See `compilation-error-regexp-alist' for help on their format.")
 
 ;;;###autoload
